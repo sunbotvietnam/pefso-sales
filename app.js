@@ -1,0 +1,1 @@
+(()=>{const a=document.createElement('script');a.src='app1.js';a.onload=()=>{const b=document.createElement('script');b.src='app2.js';document.body.appendChild(b)};document.body.appendChild(a)})();
