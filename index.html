@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PEFSO Sales</title>
+<style>
+:root{--orange:#ED7A1A;--green:#133D35;--bg:#FBF5EC;--paper:#fff;--line:#EADCC8;--muted:#68746D;--red:#B42318}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--green)}
+button,input,select{font:inherit}.hidden{display:none!important}
+.login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.card{background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 45px rgba(50,35,15,.1);padding:22px}
+.login-card{width:min(440px,100%)}.brand{font-size:28px;font-weight:900;color:var(--orange);letter-spacing:-.04em}
+.sub{color:var(--muted);font-size:13px;line-height:1.45}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.btn{border:0;border-radius:14px;padding:11px 14px;font-weight:800;cursor:pointer;background:var(--green);color:#fff}
+.btn.orange{background:var(--orange)}.btn.light{background:#fff;color:var(--green);border:1px solid var(--line)}.btn.red{background:#fff;color:var(--red);border:1px solid #efc2ba}
+.btn.full{width:100%;margin-top:16px}.error{color:var(--red);font-size:13px;margin-top:10px}.ok{color:#146c43;font-size:13px;margin-top:10px}
+header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);z-index:10}
+.head{max-width:1180px;margin:auto;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.app{max-width:1180px;margin:auto;padding:18px}.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.nav button{background:#fff;border:1px solid var(--line);padding:9px 12px;border-radius:999px;font-weight:800;color:var(--green)}
+.nav button.active{background:var(--green);color:#fff}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi{padding:16px}.kpi b{font-size:27px;display:block;margin-top:5px}.kpi span{font-size:12px;color:var(--muted)}
+.section{display:none}.section.active{display:block}.toolbar{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}th{background:var(--green);color:#fff;text-align:left;padding:9px}td{padding:9px;border-bottom:1px solid var(--line)}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff7ed;border:1px solid #ffd2a1;font-size:11px;font-weight:800}
+.modal{position:fixed;inset:0;background:rgba(19,61,53,.4);display:grid;place-items:center;padding:20px;z-index:50}.modal>.card{width:min(560px,100%)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="loginView" class="login">
+  <div class="card login-card">
+    <div class="brand">PEFSO SALES</div>
+    <p class="sub">Independent Sales Workspace · V1 Balloon Weight</p>
+    <label>ID</label><input id="loginId" autocomplete="username" placeholder="admin / staff / ctv">
+    <label>PIN 8 số</label><input id="loginPin" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password">
+    <button class="btn orange full" id="loginBtn">Đăng nhập</button>
+    <div id="loginMsg"></div>
+  </div>
+</div>
+<div id="appView" class="hidden">
+<header><div class="head"><div><div class="brand">PEFSO SALES</div><div class="sub" id="who"></div></div><button class="btn light" id="logoutBtn">Đăng xuất</button></div></header>
+<main class="app">
+  <div class="nav">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="customers">Customers</button>
+    <button data-tab="deals">Deals</button>
+    <button data-tab="products">Products</button>
+    <button data-tab="proposal">Proposal</button>
+    <button data-tab="quotation">Quotation</button>
+    <button data-tab="followup">Follow-up</button>
+    <button data-tab="users" id="usersTab" class="hidden">User Management</button>
+    <button data-tab="account">My Account</button>
+  </div>
+  <section id="dashboard" class="section active">
+    <div class="grid">
+      <div class="card kpi"><span>Active Leads</span><b>0</b></div>
+      <div class="card kpi"><span>Open Deals</span><b>0</b></div>
+      <div class="card kpi"><span>Quotation Pending</span><b>0</b></div>
+    </div>
+    <div class="card" style="margin-top:14px"><b>Balloon Weight V1</b><p class="sub">Sales-only scope: customer → deal → proposal → quotation approval → follow-up → won/lost → commission status.</p></div>
+  </section>
+  <section id="customers" class="section"><div class="card"><h2>Customers</h2><p class="sub">Duplicate control and assignment module will be connected next.</p></div></section>
+  <section id="deals" class="section"><div class="card"><h2>Deals</h2><p class="sub">Pipeline, next action, request won and lost reason.</p></div></section>
+  <section id="products" class="section"><div class="card"><h2>Balloon Weight Products</h2><p class="sub">13 priority foil codes and product master will be loaded from the Balloon Weight backend.</p></div></section>
+  <section id="proposal" class="section"><div class="card"><h2>Proposal Builder</h2><p class="sub">This will reuse the proven proposal-builder logic without modifying the old repository.</p></div></section>
+  <section id="quotation" class="section"><div class="card"><h2>Quotation</h2><p class="sub">All official quotations require Admin approval and version history.</p></div></section>
+  <section id="followup" class="section"><div class="card"><h2>Follow-up</h2><p class="sub">Today · Overdue · Upcoming.</p></div></section>
+  <section id="users" class="section">
+    <div class="card">
+      <div class="toolbar"><div><h2 style="margin:0">User Management</h2><p class="sub">Admin only</p></div><button class="btn orange" id="newUserBtn">+ Tạo tài khoản</button></div>
+      <div id="userMsg"></div>
+      <table><thead><tr><th>ID</th><th>Role</th><th>Tên</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="usersBody"></tbody></table>
+    </div>
+  </section>
+  <section id="account" class="section">
+    <div class="card" style="max-width:620px">
+      <h2>My Account</h2>
+      <p class="sub">Đổi ID và/hoặc PIN của chính tài khoản. Sau khi đổi, hệ thống sẽ đăng xuất và yêu cầu đăng nhập lại.</p>
+      <label>ID mới</label><input id="ownNewId">
+      <label>PIN hiện tại</label><input id="ownCurrentPin" type="password" inputmode="numeric" maxlength="8">
+      <label>PIN mới (để trống nếu chỉ đổi ID)</label><input id="ownNewPin" type="password" inputmode="numeric" maxlength="8">
+      <button class="btn orange" style="margin-top:14px" id="saveOwnBtn">Lưu thay đổi</button>
+      <div id="ownMsg"></div>
+    </div>
+  </section>
+</main>
+</div>
+<div id="userModal" class="modal hidden">
+  <div class="card">
+    <h2 id="modalTitle">Tài khoản</h2>
+    <input id="originalUserId" type="hidden">
+    <div class="row2"><div><label>ID</label><input id="editUserId"></div><div><label>Role</label><select id="editRole"><option value="admin">Admin</option><option value="staff">Staff</option><option value="collaborator">Collaborator</option></select></div></div>
+    <label>Tên hiển thị</label><input id="editName">
+    <label id="newPinLabel">PIN 8 số</label><input id="editPin" type="password" inputmode="numeric" maxlength="8">
+    <div class="actions"><button class="btn light" id="closeModalBtn">Hủy</button><button class="btn orange" id="saveUserBtn">Lưu</button></div>
+    <div id="modalMsg"></div>
+  </div>
+</div>
+<script>
+const API_URL = "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE";
+let token = localStorage.getItem("pefso_token") || "";
+let currentUser = null;
+async function api(action, payload={}) {
+  if(API_URL.includes("PASTE_")) throw new Error("Chưa cấu hình Apps Script Web App URL");
+  const res = await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,token,...payload})});
+  return await res.json();
+}
+function msg(el,text,ok=false){el.className=ok?"ok":"error";el.textContent=text||""}
+function showApp(user){
+  currentUser=user; document.getElementById("loginView").classList.add("hidden"); document.getElementById("appView").classList.remove("hidden");
+  document.getElementById("who").textContent=(user.display_name||user.user_id)+" · "+user.role;
+  document.getElementById("ownNewId").value=user.user_id;
+  if(user.permissions && (String(user.permissions.can_manage_users)==="true" || user.permissions.can_manage_users===true)){
+    document.getElementById("usersTab").classList.remove("hidden"); loadUsers();
+  } else document.getElementById("usersTab").classList.add("hidden");
+}
+async function bootstrap(){if(!token)return;try{const r=await api("me");if(r.ok)showApp(r.user);else logoutLocal()}catch(e){logoutLocal()}}
+function logoutLocal(){token="";currentUser=null;localStorage.removeItem("pefso_token");document.getElementById("appView").classList.add("hidden");document.getElementById("loginView").classList.remove("hidden")}
+document.getElementById("loginBtn").onclick=async()=>{const id=document.getElementById("loginId").value.trim(),pin=document.getElementById("loginPin").value.trim(),el=document.getElementById("loginMsg");if(!/^\d{8}$/.test(pin)){msg(el,"PIN phải có đúng 8 chữ số");return}try{const r=await api("login",{user_id:id,pin});if(!r.ok){msg(el,r.error||"Đăng nhập thất bại");return}token=r.token;localStorage.setItem("pefso_token",token);showApp(r.user);msg(el,"",true)}catch(e){msg(el,e.message)}};
+document.getElementById("logoutBtn").onclick=async()=>{try{await api("logout")}catch(e){}logoutLocal()};
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.getElementById(b.dataset.tab).classList.add("active");if(b.dataset.tab==="users")loadUsers()});
+async function loadUsers(){const body=document.getElementById("usersBody"),el=document.getElementById("userMsg");body.innerHTML="<tr><td colspan=5>Loading...</td></tr>";try{const r=await api("listUsers");if(!r.ok)throw new Error(r.error);body.innerHTML=r.users.map(u=>`<tr><td><b>${esc(u.user_id)}</b></td><td>${esc(u.role)}</td><td>${esc(u.display_name||"")}</td><td><span class="badge">${String(u.active)==="true"||u.active===true?"Active":"Inactive"}</span></td><td><button class="btn light" onclick='editUser(${JSON.stringify(JSON.stringify(u))})'>Sửa</button> <button class="btn light" onclick='resetPin(${JSON.stringify(u.user_id)})'>Reset PIN</button> <button class="btn red" onclick='toggleUser(${JSON.stringify(u.user_id)},${!(String(u.active)==="true"||u.active===true)})'>${String(u.active)==="true"||u.active===true?"Khóa":"Mở"}</button></td></tr>`).join("");msg(el,"",true)}catch(e){body.innerHTML="";msg(el,e.message)}}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
+function openModal(){document.getElementById("userModal").classList.remove("hidden");document.getElementById("modalMsg").textContent=""}
+function closeModal(){document.getElementById("userModal").classList.add("hidden")}
+document.getElementById("newUserBtn").onclick=()=>{document.getElementById("modalTitle").textContent="Tạo tài khoản";document.getElementById("originalUserId").value="";document.getElementById("editUserId").value="";document.getElementById("editRole").value="collaborator";document.getElementById("editName").value="";document.getElementById("editPin").value="";document.getElementById("newPinLabel").textContent="PIN 8 số";openModal()};
+window.editUser=(json)=>{const u=JSON.parse(json);document.getElementById("modalTitle").textContent="Sửa tài khoản";document.getElementById("originalUserId").value=u.user_id;document.getElementById("editUserId").value=u.user_id;document.getElementById("editRole").value=u.role;document.getElementById("editName").value=u.display_name||"";document.getElementById("editPin").value="";document.getElementById("newPinLabel").textContent="PIN: dùng Reset PIN riêng";openModal()};
+document.getElementById("closeModalBtn").onclick=closeModal;
+document.getElementById("saveUserBtn").onclick=async()=>{const original=document.getElementById("originalUserId").value,uid=document.getElementById("editUserId").value.trim(),role=document.getElementById("editRole").value,name=document.getElementById("editName").value.trim(),pin=document.getElementById("editPin").value.trim(),el=document.getElementById("modalMsg");if(!original&&!/^\d{8}$/.test(pin)){msg(el,"Tài khoản mới cần PIN đúng 8 số");return}try{const r=await api("saveUser",{original_user_id:original,user_id:uid,role,display_name:name,pin});if(!r.ok)throw new Error(r.error);closeModal();loadUsers()}catch(e){msg(el,e.message)}};
+window.resetPin=async(uid)=>{const pin=prompt("Nhập PIN mới 8 số cho "+uid);if(pin===null)return;if(!/^\d{8}$/.test(pin)){alert("PIN phải đúng 8 số");return}const r=await api("resetPin",{user_id:uid,new_pin:pin});if(!r.ok)alert(r.error);else alert("Đã reset PIN")};
+window.toggleUser=async(uid,active)=>{const r=await api("setUserActive",{user_id:uid,active});if(!r.ok)alert(r.error);else loadUsers()};
+document.getElementById("saveOwnBtn").onclick=async()=>{const el=document.getElementById("ownMsg"),current_pin=document.getElementById("ownCurrentPin").value.trim(),new_pin=document.getElementById("ownNewPin").value.trim(),new_user_id=document.getElementById("ownNewId").value.trim();if(!/^\d{8}$/.test(current_pin)){msg(el,"Cần nhập PIN hiện tại đủ 8 số");return}if(new_pin&&!/^\d{8}$/.test(new_pin)){msg(el,"PIN mới phải đúng 8 số");return}try{const r=await api("changeOwnCredentials",{current_pin,new_pin,new_user_id});if(!r.ok)throw new Error(r.error);msg(el,"Đã thay đổi. Hệ thống sẽ đăng xuất.",true);setTimeout(logoutLocal,800)}catch(e){msg(el,e.message)}};
+bootstrap();
+</script>
+</body></html>
