@@ -25,3 +25,5 @@ async function saveDealEnhanced(){
 }
 async function requestWon(id){try{const r=await api("requestWon",{deal_id:id});if(!r.ok)throw Error(r.error);closeModal();await loadDeals();loadDashboard()}catch(e){message("mMsg",e.message||"Request Won requires the current backend version.")}}
 async function confirmWon(id){const price=prompt("Final selling price (USD/pc)");if(price===null)return;const qty=prompt("Final quantity (pcs)");if(qty===null)return;try{const r=await api("confirmWon",{deal_id:id,final_selling_price:Number(price),final_qty:Number(qty)});if(!r.ok)throw Error(r.error);closeModal();await loadDeals();loadDashboard()}catch(e){message("mMsg",e.message||"Confirm Won requires the current backend version.")}}
+
+(()=>{const s=document.createElement('script');s.src='phase2.js?v=8';document.body.appendChild(s)})();
