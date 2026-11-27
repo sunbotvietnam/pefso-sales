@@ -1,4 +1,4 @@
-# PEFSO Product Studio V1 — internal pilot
+# PEFSO Product Studio V1.1 — internal pilot
 
 This module extends the existing Sales Kit Master v3, without changing its legacy Product Master or the running Proposal/Sales applications. No production data, spreadsheet ID, credentials, or customer details are committed.
 
@@ -31,4 +31,11 @@ Not yet tested: Google Apps Script authorization, actual dialog rendering and en
 
 ## Next version
 
-Structured specification editing and evidence/asset approval, bulk SKU import, separate roles, explicit pack quantity, controlled product edits and reconciliation, proposal adapter to SKU_MASTER, public catalog service, RFQ and quotation lines. The live original Proposal repository remains read-only to the current connection.
+AI-assisted intake from source folders, asset approval, separate roles, reconciliation, proposal adapter to SKU_MASTER, public catalog service, RFQ and quotation lines. The live original Proposal repository remains read-only to the current connection.
+
+## V1.1 additions — 2026-11-28
+- Bulk intake: paste TSV from Excel/Sheets, including exactly this header: sku, family_id, product_name_en, specification, order_unit (tab separated). Up to 100 data rows; no embedded tabs or multiline cells. A shared source folder or technical document URL is required. Preview is read-only. Commit revalidates the whole batch under the document lock and only writes if every row is valid. No automatic approval. Native XLSX file upload is not implemented.
+- Core editing and structured attribute upsert require a source and reason; technical changes return the item to Ready for review / Hold. Review consistency between display specs and structured attributes before approving again.
+- Asset registration accepts Drive file links at family level, labels representative/concept/reference assets and defaults to Hold. It does not fetch the image, verify its contents, change sharing permissions, or certify exact SKU evidence.
+- 18 additional in-memory regression checks passed for batch preview, duplicate rejection, all-or-none validation, commit/replay, edits, spec upsert, asset scope and audit. Both JavaScript files pass syntax parsing. No live test writes. Google authorization and browser dialog testing remain pending.
+- Installation uses the same two files, not a new Apps Script project. If V1.0 has already been installed, replace only ProductStudio.gs and ProductStudio.html; rerun psInstall. Otherwise install V1.1 directly.
