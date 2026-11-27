@@ -73,7 +73,7 @@ function psPromote(p){const actor=psActor_();return psWithLock_(()=>{
   const sku=psId_(r.proposed_sku);if(s.rows.some(x=>String(x.sku).toUpperCase()===sku))throw Error("SKU đã tồn tại; kiểm tra hồ sơ trước khi tiếp tục.");
   const f=psRecord_(psRead_("cat"),"family_id",r.family_id);
   if(f.category_id!==r.category_id||f.collection_id!==r.collection_id)throw Error("Family mismatch");
-  const row={sku,category_id:r.category_id,collection_id:r.collection_id,family_id:r.family_id,legacy_product_id:f.legacy_product_id||"",product_name_en:r.product_name_en,spec_display_en:r.raw_spec_or_description,order_unit_source:r.order_unit,source_rfq_status:"",development_status:"Approved",publish_status:"Hold",review_note_vi:r.review_note,source_product_list:r.source_folder_url,source_technical:r.source_document_url,asset_scope:"Unverified",updated_date:psDate_()};
+  const row={sku,category_id:r.category_id,collection_id:r.collection_id,family_id:r.family_id,legacy_product_id:f.legacy_product_id||"",product_name_en:psRequire_(psText_(r.product_name_en,250),"tên sản phẩm"),spec_display_en:psRequire_(psText_(r.raw_spec_or_description,4000),"thông số"),order_unit_source:psRequire_(psText_(r.order_unit,100),"đơn vị"),source_rfq_status:"",development_status:"Approved",publish_status:"Hold",review_note_vi:r.review_note,source_product_list:psURL_(r.source_folder_url),source_technical:psURL_(r.source_document_url),asset_scope:"Unverified",updated_date:psDate_()};
   psAppend_(s,row);psSet_(t,r._row,{review_status:"Promoted",promoted_sku:sku});psAudit_(actor,"PROMOTE",sku,{},row,"Publication remains on Hold");return {ok:true,id:sku};
 })}
 function psSetStatus(p){const actor=psActor_();return psWithLock_(()=>{
@@ -87,3 +87,72 @@ function psSetStatus(p){const actor=psActor_();return psWithLock_(()=>{
 })}
 /** Internal preview only; allowlist. No URL, buyer data, internal note, price or stock. */
 function psPublicPreview(){psActor_();return psRead_("sku").rows.filter(psPublic_).map(r=>({sku:r.sku,category_id:r.category_id,collection_id:r.collection_id,family_id:r.family_id,product_name_en:r.product_name_en,spec_display_en:r.spec_display_en,order_unit:r.order_unit_source,units_per_pack:r.units_per_pack}));}
+
+/** V1.1: batch intake from a rectangular TSV copied from Excel/Sheets. */
+function psBatchPlan_(p){
+ const text=String(p.tsv||"").replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n").trim();
+ if(!text||text.length>400000)throw Error("Dữ liệu trống hoặc quá lớn.");
+ const lines=text.split("\n"), expected=["sku","family_id","product_name_en","specification","order_unit"];
+ const header=lines.shift().split("\t").map(x=>x.trim().toLowerCase());
+ if(header.length!==5||!expected.every((x,i)=>x===header[i]))throw Error("Tiêu đề phải đúng: "+expected.join(" | "));
+ if(lines.length>100)throw Error("Tối đa 100 SKU/lần.");
+ const folder=psURL_(p.source_folder_url),doc=psURL_(p.source_document_url);psRequire_(folder||doc,"nguồn dữ liệu");
+ const t=psRead_("intake"), s=psRead_("sku"), f=psRead_("cat");
+ const existing=new Set(s.rows.map(x=>String(x.sku).toUpperCase())),pending=new Set(t.rows.filter(x=>!["Rejected","Promoted"].includes(x.review_status)).map(x=>String(x.proposed_sku).toUpperCase())),seen=new Set();
+ const result=[];
+ lines.forEach((line,i)=>{if(!line.trim())return;let sku="",name="";try{
+  const a=line.split("\t");if(a.length!==5)throw Error("Cần đúng 5 cột; không dùng tab hoặc xuống dòng trong ô.");
+  sku=psId_(a[0]);name=psRequire_(psText_(a[2],250),"tên");
+  const fam=psRecord_(f,"family_id",psId_(a[1]));
+  if(existing.has(sku))throw Error("Đã có trong SKU Master");
+  if(pending.has(sku))throw Error("Đã có hồ sơ tiếp nhận");
+  if(seen.has(sku))throw Error("Trùng trong lô nhập");seen.add(sku);
+  result.push({line:i+2,sku,name,ok:true,record:{category_id:fam.category_id,collection_id:fam.collection_id,family_id:fam.family_id,proposed_sku:sku,product_name_en:name,raw_spec_or_description:psRequire_(psText_(a[3],4000),"thông số"),order_unit:psRequire_(psText_(a[4],100),"đơn vị"),source_folder_url:folder,source_document_url:doc,review_status:"New"}});
+ }catch(e){result.push({line:i+2,sku,name,ok:false,error:String(e.message||e)})}});
+ if(!result.length)throw Error("Không có dòng dữ liệu.");
+ return {t,result};
+}
+function psBatchPreview(p){psActor_();const {result}=psBatchPlan_(p);return result.map(({record,...r})=>r)}
+function psBatchCommit(p){const actor=psActor_();return psWithLock_(()=>{
+ if(p.confirm!==true)throw Error("Cần xác nhận nhập lô.");
+ const {t,result}=psBatchPlan_(p);if(result.some(r=>!r.ok))throw Error("Lô có lỗi hoặc dữ liệu đã thay đổi; kiểm tra lại. Chưa nhập dòng nào.");
+ const records=result.map(r=>Object.assign({intake_id:"INT-"+Utilities.getUuid(),received_date:psDate_(),submitted_by:actor},r.record));
+ const rows=records.map(r=>t.h.map(k=>r[k]===undefined?"":r[k]));
+ const start=t.sh.getLastRow()+1,need=start+rows.length-1-t.sh.getMaxRows();if(need>0)t.sh.insertRowsAfter(t.sh.getMaxRows(),need);
+ t.sh.getRange(start,1,rows.length,t.h.length).setValues(rows);
+ psAudit_(actor,"BATCH_INTAKE","BATCH-"+Utilities.getUuid(),{},records.map(r=>({intake_id:r.intake_id,sku:r.proposed_sku})),"Batch intake; no automatic approval");
+ return {ok:true,count:records.length};
+})}
+/** Correct core data or a structured technical attribute. Any technical edit returns the SKU to review/Hold. */
+function psEditCore(p){const actor=psActor_();return psWithLock_(()=>{
+ const t=psRead_("sku"),r=psRecord_(t,"sku",psId_(p.sku));
+ if(r.development_status==="Discontinued")throw Error("SKU ngừng kinh doanh; mở lại qua duyệt trước.");
+ const note=psRequire_(psText_(p.note,2000),"lý do chỉnh sửa"), source=psRequire_(psURL_(p.source_technical),"nguồn kỹ thuật");
+ const raw=String(p.units_per_pack||"").trim();let units="";if(raw){units=Number(raw);if(!Number.isSafeInteger(units)||units<1)throw Error("Số đơn vị/gói phải là số nguyên dương");}
+ const ch={product_name_en:psRequire_(psText_(p.product_name_en,250),"tên"),spec_display_en:psRequire_(psText_(p.spec_display_en,4000),"thông số"),order_unit_source:psRequire_(psText_(p.order_unit_source,100),"đơn vị"),units_per_pack:units,source_technical:source,development_status:"Ready for review",publish_status:"Hold",review_note_vi:note,updated_date:psDate_()};
+ psSet_(t,r._row,ch);psAudit_(actor,"EDIT_CORE",r.sku,Object.fromEntries(Object.keys(ch).map(k=>[k,r[k]])),ch,note);return {ok:true};
+})}
+function psSaveSpec(p){const actor=psActor_();return psWithLock_(()=>{
+ const s=psRead_("sku"),r=psRecord_(s,"sku",psId_(p.sku)),t=psRead_("spec");
+ if(r.development_status==="Discontinued")throw Error("SKU ngừng kinh doanh");
+ const key=psText_(p.attribute_key,100).toLowerCase();if(!/^[a-z][a-z0-9_]{1,99}$/.test(key))throw Error("Thuộc tính dùng snake_case, ví dụ diameter_mm.");
+ const raw=String(p.value_number??"").trim(),value=psText_(p.value_text,2000);let num="";if(raw){if(!/^-?\d+(\.\d+)?$/.test(raw)||!Number.isFinite(Number(raw)))throw Error("Giá trị số không hợp lệ; dùng dấu chấm.");num=Number(raw);}
+ if((num!==""&&value)||(num===""&&!value))throw Error("Nhập đúng một trong giá trị số hoặc chữ.");
+ const source=psRequire_(psURL_(p.source_url),"nguồn kỹ thuật"),note=psRequire_(psText_(p.note,2000),"lý do");
+ const basis=psRequire_(psText_(p.measurement_basis,250),"cơ sở đo");const row={sku:r.sku,attribute_key:key,value_number:num,value_text:value,unit:psText_(p.unit,60),measurement_basis:basis,evidence_status:"Source listed; sample review",source_url:source};
+ const matches=t.rows.filter(x=>x.sku===r.sku&&x.attribute_key===key);
+ if(matches.length>1)throw Error("Thuộc tính có nhiều bản ghi; cần đối soát thủ công.");
+ // Reset publication before editing the evidence record.
+ psSet_(s,r._row,{development_status:"Ready for review",publish_status:"Hold",review_note_vi:note,updated_date:psDate_()});
+ if(matches.length)psSet_(t,matches[0]._row,row);else psAppend_(t,row);
+ psAudit_(actor,"UPSERT_SPEC",r.sku+":"+key,matches[0]||{},row,note);return {ok:true};
+})}
+function psAddAsset(p){const actor=psActor_();return psWithLock_(()=>{
+ const t=psRead_("assets"),r=psRecord_(psRead_("sku"),"sku",psId_(p.sku));
+ const url=psRequire_(psURL_(p.source_drive_url),"link nguồn");if(!/^https:\/\/drive\.google\.com\/file\/d\/[A-Za-z0-9_-]+(?:\/|$)/.test(url))throw Error("Cần link file Google Drive, không phải link thư mục.");
+ const type=String(p.asset_type);if(!["Family representative","Concept illustration","Internal reference","Technical reference","Brand asset"].includes(type))throw Error("Loại tài nguyên không hợp lệ");
+ const fileId=url.match(/\/file\/d\/([A-Za-z0-9_-]+)/)[1];
+ if(t.rows.some(x=>x.family_id===r.family_id&&String(x.source_drive_url).includes("/file/d/"+fileId+"/")))throw Error("File đã liên kết với dòng sản phẩm.");
+ const row={asset_id:"AS-"+Utilities.getUuid(),collection_id:r.collection_id,family_id:r.family_id,file_name:psRequire_(psText_(p.file_name,250),"tên file"),source_drive_url:"https://drive.google.com/file/d/"+fileId+"/view",asset_type:type,scope:"Family",public_status:"Hold",caption_or_note:psRequire_(psText_(p.caption_or_note,1000),"chú thích loại ảnh")};
+ psAppend_(t,row);psAudit_(actor,"ADD_ASSET",row.asset_id,{},row,"Family scope; no exact SKU claim");return {ok:true};
+})}
